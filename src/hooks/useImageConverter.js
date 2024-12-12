@@ -10,11 +10,13 @@ export function useImageConverter() {
     threshold: 128,
     color: '#000000'
   });
+  const [currentImage, setCurrentImage] = useState(null);
 
   const handleImageUpload = useCallback(async (file) => {
     try {
       setIsConverting(true);
       setError(null);
+      setCurrentImage(file);  // Store the current image
       
       // Pass the file directly to imageToSvg
       const svg = await imageToSvg(file, options);
@@ -26,9 +28,23 @@ export function useImageConverter() {
     }
   }, [options]);
 
-  const handleOptionsChange = useCallback((newOptions) => {
+  const handleOptionsChange = useCallback(async (newOptions) => {
     setOptions(prev => ({ ...prev, ...newOptions }));
-  }, []);
+    
+    // If we have a current image, reconvert it with new options
+    if (currentImage) {
+      try {
+        setIsConverting(true);
+        setError(null);
+        const svg = await imageToSvg(currentImage, { ...options, ...newOptions });
+        setConvertedSvg(svg);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsConverting(false);
+      }
+    }
+  }, [currentImage, options]);
 
   const handleDownload = useCallback(() => {
     if (!convertedSvg) return;
