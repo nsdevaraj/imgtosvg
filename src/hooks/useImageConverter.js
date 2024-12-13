@@ -3,24 +3,24 @@ import { imageToSvg } from '../utils/imageToSvg';
 import { createDownloadableBlob, downloadBlob } from '../utils/fileUtils';
 
 export function useImageConverter() {
-  const [convertedSvg, setConvertedSvg] = useState(null);
+  const [convertedSvgs, setConvertedSvgs] = useState([]);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState(null);
   const [options, setOptions] = useState({
     threshold: 128,
     color: '#000000'
   });
-  const [currentImage, setCurrentImage] = useState(null);
+  const [currentImages, setCurrentImages] = useState([]);
 
-  const handleImageUpload = useCallback(async (file) => {
+  const handleImageUpload = useCallback(async (files) => {
     try {
       setIsConverting(true);
       setError(null);
-      setCurrentImage(file);  // Store the current image
-      
-      // Pass the file directly to imageToSvg
-      const svg = await imageToSvg(file, options);
-      setConvertedSvg(svg);
+      setCurrentImages(files);
+
+      const svgPromises = files.map(file => imageToSvg(file, options));
+      const svgs = await Promise.all(svgPromises);
+      setConvertedSvgs(svgs);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,30 +31,31 @@ export function useImageConverter() {
   const handleOptionsChange = useCallback(async (newOptions) => {
     setOptions(prev => ({ ...prev, ...newOptions }));
     
-    // If we have a current image, reconvert it with new options
-    if (currentImage) {
+    if (currentImages.length > 0) {
       try {
         setIsConverting(true);
         setError(null);
-        const svg = await imageToSvg(currentImage, { ...options, ...newOptions });
-        setConvertedSvg(svg);
+        const updatedOptions = { ...options, ...newOptions };
+        const svgPromises = currentImages.map(image => imageToSvg(image, updatedOptions));
+        const svgs = await Promise.all(svgPromises);
+        setConvertedSvgs(svgs);
       } catch (err) {
         setError(err.message);
       } finally {
         setIsConverting(false);
       }
     }
-  }, [currentImage, options]);
+  }, [currentImages, options]);
 
-  const handleDownload = useCallback(() => {
-    if (!convertedSvg) return;
+  const handleDownload = useCallback((index) => {
+    if (!convertedSvgs[index]) return;
     
-    const blob = createDownloadableBlob(convertedSvg);
-    downloadBlob(blob, 'converted.svg');
-  }, [convertedSvg]);
+    const blob = createDownloadableBlob(convertedSvgs[index], 'image/svg+xml');
+    downloadBlob(blob, `converted-${index + 1}.svg`);
+  }, [convertedSvgs]);
 
   return {
-    convertedSvg,
+    convertedSvgs,
     isConverting,
     error,
     options,

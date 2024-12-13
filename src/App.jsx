@@ -6,7 +6,7 @@ import { useImageConverter } from './hooks/useImageConverter';
 
 function App() {
   const {
-    convertedSvg,
+    convertedSvgs,
     isConverting,
     error,
     options,
@@ -37,11 +37,16 @@ function App() {
           )}
         </div>
 
-        {convertedSvg && (
-          <Preview 
-            svg={convertedSvg}
-            onDownload={handleDownload}
-          />
+        {convertedSvgs.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {convertedSvgs.map((svg, index) => (
+              <Preview 
+                key={index}
+                svg={svg}
+                onDownload={() => handleDownload(index)}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

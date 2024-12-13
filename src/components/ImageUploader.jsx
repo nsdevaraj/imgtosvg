@@ -7,9 +7,9 @@ export default function ImageUploader({ onUpload, isConverting }) {
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      onUpload(file);
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    if (files.length > 0) {
+      onUpload(files);
     }
   }, [onUpload]);
 
@@ -38,19 +38,23 @@ export default function ImageUploader({ onUpload, isConverting }) {
         isDragging ? 'text-blue-500' : 'text-gray-400'
       }`} />
       <label className="block">
-        <span className="sr-only">Choose an image</span>
+        <span className="sr-only">Choose images</span>
         <input
           type="file"
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           accept="image/*"
-          onChange={(e) => e.target.files[0] && onUpload(e.target.files[0])}
+          multiple
+          onChange={(e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) onUpload(files);
+          }}
           disabled={isConverting}
         />
       </label>
       <p className="mt-2 text-sm text-gray-500">
         {isConverting 
-          ? 'Converting image...' 
-          : 'Drop your image here or click to upload'}
+          ? 'Converting...' 
+          : 'Drop your images here or click to upload'}
       </p>
       <p className="mt-1 text-xs text-gray-400">
         Supported formats: PNG, JPG, GIF, WebP (Max 10MB)
