@@ -7,8 +7,7 @@ export function useImageConverter() {
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState(null);
   const [options, setOptions] = useState({
-    threshold: 128,
-    color: '#000000'
+    threshold: 128
   });
   const [currentImages, setCurrentImages] = useState([]);
 

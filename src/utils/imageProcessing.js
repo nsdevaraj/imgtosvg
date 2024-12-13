@@ -67,9 +67,12 @@ function preprocessImage(ctx, imageData) {
 /**
  * Converts an image to grayscale using Canvas API with improved preprocessing
  * @param {Blob|File} input - Image blob or file
+ * @param {Object} options - Options for image processing
+ * @param {string} options.colorMode - Color mode (mono or original)
+ * @param {Object} options.monoColor - Monochrome color (r, g, b)
  * @returns {Promise<ImageData>} Processed image data
  */
-export async function convertToGrayscale(input) {
+export async function convertToGrayscale(input, options) {
   try {
     validateImageFile(input);
     
@@ -103,16 +106,41 @@ export async function convertToGrayscale(input) {
           // Preprocess the image
           imageData = preprocessImage(ctx, imageData);
           
-          // Convert to grayscale
+          // Process image based on color mode
           const data = imageData.data;
+          const colorData = new Uint8ClampedArray(data.length);
+          
           for (let i = 0; i < data.length; i += 4) {
-            const gray = Math.round(
-              0.299 * data[i] + 
-              0.587 * data[i + 1] + 
-              0.114 * data[i + 2]
-            );
-            data[i] = data[i + 1] = data[i + 2] = gray;
+            if (options?.colorMode === 'mono') {
+              // Calculate brightness from original pixel
+              const brightness = Math.round(
+                0.299 * data[i] + 
+                0.587 * data[i + 1] + 
+                0.114 * data[i + 2]
+              );
+              
+              const monoColor = options.monoColor || { r: 0, g: 0, b: 255 }; // Default to blue
+              
+              // Apply brightness to the mono color components
+              const intensity = brightness / 255;
+              data[i] = Math.round(monoColor.r * intensity);
+              data[i + 1] = Math.round(monoColor.g * intensity);
+              data[i + 2] = Math.round(monoColor.b * intensity);
+            } else {
+              // Keep original color values
+              data[i] = data[i];
+              data[i + 1] = data[i + 1];
+              data[i + 2] = data[i + 2];
+            }
+            
+            // Store color data for reference
+            colorData[i] = data[i];
+            colorData[i + 1] = data[i + 1];
+            colorData[i + 2] = data[i + 2];
+            colorData[i + 3] = data[i + 3];
           }
+          
+          imageData.colorData = colorData; // Attach color data to imageData
           
           URL.revokeObjectURL(imageUrl);
           resolve(imageData);
